@@ -1,0 +1,109 @@
+// Define pins for the three ultrasonic sensors
+const int trigPinFront = 9;
+const int echoPinFront = 10;
+const int trigPinLeft = 11;
+const int echoPinLeft = 12;
+const int trigPinRight = 13;
+const int echoPinRight = A0;
+
+const int in1 = 2;
+const int in2 = 3;
+const int in3 = 4;
+const int in4 = 5;
+const int ena = 6;
+const int enb = 7;
+
+void setup() {
+  pinMode(trigPinFront, OUTPUT);
+  pinMode(echoPinFront, INPUT);
+  pinMode(trigPinLeft, OUTPUT);
+  pinMode(echoPinLeft, INPUT);
+  pinMode(trigPinRight, OUTPUT);
+  pinMode(echoPinRight, INPUT);
+
+  pinMode(in1, OUTPUT);
+  pinMode(in2, OUTPUT);
+  pinMode(in3, OUTPUT);
+  pinMode(in4, OUTPUT);
+  pinMode(ena, OUTPUT);
+  pinMode(enb, OUTPUT);
+
+  Serial.begin(9600);
+}
+
+long readUltrasonicDistance(int trigPin, int echoPin) {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(50);
+  digitalWrite(trigPin, LOW);
+  return pulseIn(echoPin, HIGH) * 0.034 / 2;
+}
+
+void loop() {
+  long distanceFront = readUltrasonicDistance(trigPinFront, echoPinFront);
+  long distanceLeft = readUltrasonicDistance(trigPinLeft, echoPinLeft);
+  long distanceRight = readUltrasonicDistance(trigPinRight, echoPinRight);
+
+  Serial.print("Front: ");
+  Serial.print(distanceFront);
+  Serial.print(" cm, Left: ");
+  Serial.print(distanceLeft);
+  Serial.print(" cm, Right: ");
+  Serial.println(distanceRight);
+
+if (distanceFront < 20) {
+    // Stop if obstacle in front
+    stopCar();
+    delay(2000);
+    if (distanceLeft > distanceRight) {
+      // Turn left
+      turnLeft();
+      delay(2000);
+    } else {
+      // Turn right
+      turnRight();
+      delay(2000);
+    }
+  } else {
+    // Move forward if no obstacle in front
+    moveForward();
+  }
+  delay(100);
+}
+
+
+void stopCar() {
+  digitalWrite(in1, LOW);
+  digitalWrite(in2, LOW);
+  digitalWrite(in3, LOW);
+  digitalWrite(in4, LOW);
+}
+
+void moveForward() {
+  digitalWrite(in1, HIGH);
+  digitalWrite(in2, LOW);
+  digitalWrite(in3, LOW);
+  digitalWrite(in4, HIGH);
+  analogWrite(ena, 200);
+  analogWrite(enb, 200);
+}
+
+void turnLeft() {
+  digitalWrite(in1, HIGH);
+  digitalWrite(in2, LOW);
+  digitalWrite(in3, LOW);
+  digitalWrite(in4, HIGH);
+  analogWrite(ena, 200);
+  analogWrite(enb, 0);
+}
+
+void turnRight() {
+  digitalWrite(in1, HIGH);
+  digitalWrite(in2, LOW);
+  digitalWrite(in3, LOW);
+  digitalWrite(in4, HIGH);
+  analogWrite(ena, 0);
+  analogWrite(enb, 200);
+  
+  
