@@ -1,0 +1,115 @@
+#include <Servo.h>
+
+// Define servo pins
+#define BASE_PIN 9
+#define SHOULDER_PIN 10
+#define ELBOW_PIN 11
+#define GRIPPER_PIN 12
+const int joystickButtonPin = 7;
+
+// Define joystick pins
+#define JOYSTICK_X A0
+#define JOYSTICK_Y A1
+
+// Create servo objects
+Servo baseServo;
+Servo shoulderServo;
+Servo elbowServo;
+Servo gripperServo;
+
+// Variables to store the joystick values
+int joystickXValue = 0;
+int stick = 0;
+int joystickButtonState = 0;
+
+
+// Servo angle limits
+#define BASE_MIN_ANGLE 0
+#define BASE_MAX_ANGLE 180
+#define SHOULDER_MIN_ANGLE 0
+#define SHOULDER_MAX_ANGLE 180
+#define ELBOW_MIN_ANGLE 0
+#define ELBOW_MAX_ANGLE 180
+#define GRIPPER_MIN_ANGLE 0
+#define GRIPPER_MAX_ANGLE 180
+
+// Joystick threshold for sensitivity
+#define JOYSTICK_THRESHOLD 50
+
+// Current servo positions
+int currentBaseAngle = 90;
+int currentShoulderAngle = 90;
+int currentElbowAngle = 90;
+int gripperAngle = 90;
+
+void setup() {
+  // Attach servo objects to pins
+  baseServo.attach(BASE_PIN);
+  shoulderServo.attach(SHOULDER_PIN);
+  elbowServo.attach(ELBOW_PIN);
+  gripperServo.attach(GRIPPER_PIN);
+  
+  // Initialize servo positions
+  baseServo.write(currentBaseAngle);
+  shoulderServo.write(currentShoulderAngle);
+  elbowServo.write(currentElbowAngle);
+
+  // Set joystick button pin as input
+  pinMode(joystickButtonPin, INPUT_PULLUP);
+
+  Serial.begin(9600);
+
+}
+
+void loop() {
+  // Read joystick values
+  int joystickX = analogRead(JOYSTICK_X);
+  int joystickY = analogRead(JOYSTICK_Y);
+
+  // Map joystick values to servo angles
+  int targetBaseAngle = map(joystickX, 0, 1023, BASE_MIN_ANGLE, BASE_MAX_ANGLE); // Move base left and right
+  int targetShoulderAngle = map(joystickY, 0, 1023, SHOULDER_MIN_ANGLE, SHOULDER_MAX_ANGLE); // Move shoulder up and down
+  int targetElbowAngle = map(joystickY, 0, 1023, ELBOW_MIN_ANGLE, ELBOW_MAX_ANGLE); // Move elbow up and down
+
+  // Apply joystick threshold for sensitivity
+  if (abs(joystickX - 512) < JOYSTICK_THRESHOLD) {
+    targetBaseAngle = currentBaseAngle; // Keep the base angle if joystick is in the middle
+  }
+  if (abs(joystickY - 512) < JOYSTICK_THRESHOLD) {
+    targetShoulderAngle = currentShoulderAngle; // Keep the shoulder angle if joystick is in the middle
+    targetElbowAngle = currentElbowAngle; // Keep the elbow angle if joystick is in the middle
+  }
+
+  // Move servos to target angles gradually
+  moveServo(baseServo, currentBaseAngle, targetBaseAngle);
+  moveServo(shoulderServo, currentShoulderAngle, targetShoulderAngle);
+  moveServo(elbowServo, currentElbowAngle, targetElbowAngle);
+
+  
+ // Read the joystick button state for gripper control (0 or 1)
+  joystickButtonState = digitalRead(joystickButtonPin);
+
+  // If the button is pressed, close the gripper
+  if (joystickButtonState == LOW) {
+    gripperAngle = 180;  // Close gripper
+  } else {
+    gripperAngle = 0;    // Open gripper
+  }
+  gripperServo.write(gripperAngle);
+
+  
+
+  // Add a small delay to control the update rate
+  delay(20);
+}
+
+void moveServo(Servo &servo, int &currentAngle, int targetAngle) {
+  if (currentAngle < targetAngle) {
+    currentAngle++;
+  } else if (currentAngle > targetAngle) {
+    currentAngle--;
+  }
+  servo.write(currentAngle);
+}
+
+
